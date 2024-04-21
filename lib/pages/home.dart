@@ -7,15 +7,14 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  MyNode? rootNode;
-  late TreeController<MyNode> treeController;
+  late TreeController<FileNode> treeController;
 
   @override
   void initState() {
     super.initState();
-    treeController = TreeController<MyNode>(
-      roots: rootNode != null ? [rootNode!] : [],
-      childrenProvider: (MyNode node) => node.children,
+    treeController = TreeController<FileNode>(
+      roots: [],
+      childrenProvider: (FileNode node) => node.children,
     );
   }
 
@@ -26,6 +25,8 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _createNewProject() async {
+    final textController = TextEditingController();
+
     final projectName = await showDialog<String>(
       context: context,
       builder: (BuildContext context) {
@@ -33,6 +34,7 @@ class _HomePageState extends State<HomePage> {
           title: Text('Створити проєкт'),
           content: TextField(
             autofocus: true,
+            controller: textController,
             decoration: InputDecoration(
               hintText: 'Ім\'я проєкту',
             ),
@@ -44,8 +46,7 @@ class _HomePageState extends State<HomePage> {
             ),
             ElevatedButton(
               onPressed: () {
-                _createNewProject();
-                Navigator.of(context).pop();
+                Navigator.of(context).pop(textController.text);
               },
               child: Text('Створити'),
             ),
@@ -55,24 +56,24 @@ class _HomePageState extends State<HomePage> {
     );
 
     if (projectName != null) {
-      final projectNode = MyNode(
+      final projectNode = FileNode(
         key: DateTime.now().millisecondsSinceEpoch.toString(),
         title: projectName,
         isDirectory: true,
         children: [
-          MyNode(
+          FileNode(
             key: DateTime.now().millisecondsSinceEpoch.toString() + '1',
             title: 'Folder 1',
             isDirectory: true,
             children: [],
           ),
-          MyNode(
+          FileNode(
             key: DateTime.now().millisecondsSinceEpoch.toString() + '2',
             title: 'Folder 2',
             isDirectory: true,
             children: [],
           ),
-          MyNode(
+          FileNode(
             key: DateTime.now().millisecondsSinceEpoch.toString() + '3',
             title: 'Folder 3',
             isDirectory: true,
@@ -82,7 +83,7 @@ class _HomePageState extends State<HomePage> {
       );
 
       setState(() {
-        rootNode = projectNode;
+        treeController.roots = [projectNode];
       });
     }
   }
@@ -90,21 +91,21 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: rootNode == null
+      appBar: treeController.roots.isEmpty
           ? AppBar(
               title: Text('MOBILE-EDITOR'),
             )
           : null,
-      body: rootNode == null
+      body: treeController.roots.isEmpty
           ? Center(
               child: ElevatedButton(
                 onPressed: _createNewProject,
                 child: Text('Створити проєкт'),
               ),
             )
-          : TreeView<MyNode>(
+          : TreeView<FileNode>(
               treeController: treeController,
-              nodeBuilder: (BuildContext context, TreeEntry<MyNode> entry) {
+              nodeBuilder: (BuildContext context, TreeEntry<FileNode> entry) {
                 return MyTreeTile(
                   entry: entry,
                   onTap: () {
@@ -117,7 +118,7 @@ class _HomePageState extends State<HomePage> {
                   onRename: (newTitle) => renameNode(entry.node, newTitle),
                   onDelete: () => deleteNode(entry.node),
                   onAddChild: () {
-                    final newNode = MyNode(
+                    final newNode = FileNode(
                       key: DateTime.now().millisecondsSinceEpoch.toString(),
                       title: 'New Folder',
                       isDirectory: true,
@@ -131,27 +132,27 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  void addNode(MyNode parent, MyNode newNode) {
+  void addNode(FileNode parent, FileNode newNode) {
     setState(() {
       parent.children.add(newNode);
     });
   }
 
-  void renameNode(MyNode node, String newTitle) {
+  void renameNode(FileNode node, String newTitle) {
     setState(() {
       node.title = newTitle;
     });
   }
 
-  void deleteNode(MyNode node) {
+  void deleteNode(FileNode node) {
     setState(() {
-      if (rootNode != null) {
-        removeNodeRecursive(rootNode!, node);
+      if (treeController.roots.isNotEmpty) {
+        removeNodeRecursive(treeController.roots.elementAt(0), node);
       }
     });
   }
 
-  void removeNodeRecursive(MyNode node, MyNode targetNode) {
+  void removeNodeRecursive(FileNode node, FileNode targetNode) {
     if (node.children.contains(targetNode)) {
       node.children.remove(targetNode);
       return;
@@ -162,7 +163,7 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  void showFileEditor(BuildContext context, MyNode node) {
+  void showFileEditor(BuildContext context, FileNode node) {
     final textController = TextEditingController(text: node.title);
 
     showDialog(
@@ -203,21 +204,21 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-class MyNode {
+class FileNode {
   final String key;
   String title;
   final bool isDirectory;
-  final List<MyNode> children;
+  final List<FileNode> children;
 
-  MyNode({
+  FileNode({
     required this.key,
     required this.title,
     required this.isDirectory,
-    this.children = const <MyNode>[],
+    this.children = const <FileNode>[],
   });
 
-  MyNode copyWith({String? title, bool? isDirectory, List<MyNode>? children}) {
-    return MyNode(
+  FileNode copyWith({String? title, bool? isDirectory, List<FileNode>? children}) {
+    return FileNode(
       key: key,
       title: title ?? this.title,
       isDirectory: isDirectory ?? this.isDirectory,
@@ -236,7 +237,7 @@ class MyTreeTile extends StatefulWidget {
     required this.onAddChild,
   });
 
-  final TreeEntry<MyNode> entry;
+  final TreeEntry<FileNode> entry;
   final VoidCallback onTap;
   final ValueChanged<String> onRename;
   final VoidCallback onDelete;
