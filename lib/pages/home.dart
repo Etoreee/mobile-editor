@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_fancy_tree_view/flutter_fancy_tree_view.dart';
+import 'package:mobile_red/widgets/sidebar.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -96,6 +97,17 @@ class _HomePageState extends State<HomePage> {
               title: Text('MOBILE-EDITOR'),
             )
           : null,
+      drawer: treeController.roots.isNotEmpty
+          ? Drawer(
+              child: SideBar(
+                treeController: treeController,
+                showFileEditor: showFileEditor,
+                renameNode: renameNode,
+                deleteNode: deleteNode,
+                addNode: addNode,
+              ),
+            )
+          : null,
       body: treeController.roots.isEmpty
           ? Center(
               child: ElevatedButton(
@@ -103,32 +115,17 @@ class _HomePageState extends State<HomePage> {
                 child: Text('Створити проєкт'),
               ),
             )
-          : TreeView<FileNode>(
-              treeController: treeController,
-              nodeBuilder: (BuildContext context, TreeEntry<FileNode> entry) {
-                return MyTreeTile(
-                  entry: entry,
-                  onTap: () {
-                    if (!entry.node.isDirectory) {
-                      showFileEditor(context, entry.node);
-                    } else {
-                      treeController.toggleExpansion(entry.node);
-                    }
-                  },
-                  onRename: (newTitle) => renameNode(entry.node, newTitle),
-                  onDelete: () => deleteNode(entry.node),
-                  onAddChild: () {
-                    final newNode = FileNode(
-                      key: DateTime.now().millisecondsSinceEpoch.toString(),
-                      title: 'New Folder',
-                      isDirectory: true,
-                      children: [],
-                    );
-                    addNode(entry.node, newNode);
-                  },
-                );
-              },
-            ),
+          : treeController.roots.isEmpty
+              ? Center(
+                  child: Text('Немає проектів'),
+                )
+              : SideBar(
+                  treeController: treeController,
+                  showFileEditor: showFileEditor,
+                  renameNode: renameNode,
+                  deleteNode: deleteNode,
+                  addNode: addNode,
+                ),
     );
   }
 
@@ -290,7 +287,7 @@ class _MyTreeTileState extends State<MyTreeTile> {
                     widget.entry.node.title,
                     style: TextStyle(
                       fontFamily: 'RobotoMono',
-                      fontSize: 16.0,
+                      fontSize: 14.0,
                     ),
                   ),
                 ),
