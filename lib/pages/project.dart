@@ -1,152 +1,67 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_fancy_tree_view/flutter_fancy_tree_view.dart';
-import 'package:mobile_red/widgets/sidebar.dart';
 
-class HomePage extends StatefulWidget {
-  @override
-  _HomePageState createState() => _HomePageState();
-}
+class ProjectPage extends StatelessWidget {
+  final String projectName;
+  final TreeController<FileNode> treeController;
 
-class _HomePageState extends State<HomePage> {
-  late TreeController<FileNode> treeController;
-
-  @override
-  void initState() {
-    super.initState();
-    treeController = TreeController<FileNode>(
-      roots: [],
-      childrenProvider: (FileNode node) => node.children,
-    );
-  }
-
-  @override
-  void dispose() {
-    treeController.dispose();
-    super.dispose();
-  }
-
-  void _createNewProject() async {
-    final textController = TextEditingController();
-
-    final projectName = await showDialog<String>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Створити проєкт'),
-          content: TextField(
-            autofocus: true,
-            controller: textController,
-            decoration: InputDecoration(
-              hintText: 'Ім\'я проєкту',
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text('Відмінити'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).pop(textController.text);
-              },
-              child: Text('Створити'),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (projectName != null) {
-      final projectNode = FileNode(
-        key: DateTime.now().millisecondsSinceEpoch.toString(),
-        title: projectName,
-        isDirectory: true,
-        children: [
-          FileNode(
-            key: DateTime.now().millisecondsSinceEpoch.toString() + '1',
-            title: 'Folder 1',
-            isDirectory: true,
-            children: [],
-          ),
-          FileNode(
-            key: DateTime.now().millisecondsSinceEpoch.toString() + '2',
-            title: 'Folder 2',
-            isDirectory: true,
-            children: [],
-          ),
-          FileNode(
-            key: DateTime.now().millisecondsSinceEpoch.toString() + '3',
-            title: 'Folder 3',
-            isDirectory: true,
-            children: [],
-          ),
-        ],
-      );
-
-      setState(() {
-        treeController.roots = [projectNode];
-      });
-    }
-  }
+  ProjectPage({required this.projectName, required this.treeController});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: treeController.roots.isEmpty
-          ? AppBar(
-              title: Text('MOBILE-EDITOR'),
-            )
-          : null,
-      drawer: treeController.roots.isNotEmpty
-          ? Drawer(
-              child: SideBar(
-                treeController: treeController,
-                showFileEditor: showFileEditor,
-                renameNode: renameNode,
-                deleteNode: deleteNode,
-                addNode: addNode,
+      appBar: AppBar(
+        title: Text(projectName),
+      ),
+      body: TreeView(
+        treeController: treeController,
+        nodeBuilder: (context, entry) {
+          return MyTreeTile(
+            entry: entry,
+            onTap: () => toggleExpanded(entry),
+            onRename: (newTitle) => renameNode(entry.node, newTitle),
+            onDelete: () => deleteNode(entry.node),
+            onAddChild: () => addNode(
+              entry.node,
+              FileNode(
+                key: DateTime.now().millisecondsSinceEpoch.toString(),
+                title: 'Новий файл',
+                isDirectory: false,
               ),
-            )
-          : null,
-      body: treeController.roots.isEmpty
-          ? Center(
-              child: ElevatedButton(
-                onPressed: _createNewProject,
-                child: Text('Створити проєкт'),
-              ),
-            )
-          : treeController.roots.isEmpty
-              ? Center(
-                  child: Text('Немає проектів'),
-                )
-              : SideBar(
-                  treeController: treeController,
-                  showFileEditor: showFileEditor,
-                  renameNode: renameNode,
-                  deleteNode: deleteNode,
-                  addNode: addNode,
-                ),
+            ),
+          );
+        },
+      ),
     );
   }
 
   void addNode(FileNode parent, FileNode newNode) {
-    setState(() {
-      parent.children.add(newNode);
-    });
+    parent.children.add(newNode);
+    treeController.rebuild();
   }
 
   void renameNode(FileNode node, String newTitle) {
-    setState(() {
-      node.title = newTitle;
-    });
+    List<FileNode> rootsList = List.from(treeController.roots);
+    for (int i = 0; i < rootsList.length; i++) {
+      if (rootsList[i].key == node.key) {
+        rootsList[i] = node.copyWith(title: newTitle);
+        treeController.roots = rootsList;
+        treeController.rebuild();
+        return;
+      }
+    }
   }
 
+void toggleExpanded(TreeEntry<FileNode> entry) {
+    treeController.toggleExpansion(entry as FileNode);
+}
+
+
   void deleteNode(FileNode node) {
-    setState(() {
-      if (treeController.roots.isNotEmpty) {
-        removeNodeRecursive(treeController.roots.elementAt(0), node);
-      }
-    });
+    if (treeController.roots.isNotEmpty) {
+      removeNodeRecursive(treeController.roots.elementAt(0), node);
+      treeController.rebuild();
+    }
   }
 
   void removeNodeRecursive(FileNode node, FileNode targetNode) {
@@ -167,16 +82,16 @@ class _HomePageState extends State<HomePage> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text('MOBILE-EDITOR'),
+          title: const Text('MOBILE-EDITOR'),
           content: TextField(
             controller: textController,
             maxLines: null,
             expands: true,
-            style: TextStyle(
+            style: const TextStyle(
               fontFamily: 'RobotoMono',
               fontSize: 16.0,
             ),
-            decoration: InputDecoration(
+            decoration: const InputDecoration(
               border: OutlineInputBorder(),
             ),
           ),
@@ -185,14 +100,14 @@ class _HomePageState extends State<HomePage> {
               onPressed: () {
                 Navigator.pop(context);
               },
-              child: Text('Відмінити'),
+              child: const Text('Відмінити'),
             ),
             TextButton(
               onPressed: () {
                 renameNode(node, textController.text);
                 Navigator.pop(context);
               },
-              child: Text('Зберегти'),
+              child: const Text('Зберегти'),
             ),
           ],
         );
@@ -260,7 +175,7 @@ class _MyTreeTileState extends State<MyTreeTile> {
       onTap: widget.onTap,
       child: TreeIndentation(
         entry: widget.entry,
-        guide: IndentGuide.connectingLines(indent: 48),
+        guide: const IndentGuide.connectingLines(indent: 48),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(4, 8, 8, 8),
           child: Row(
@@ -285,14 +200,14 @@ class _MyTreeTileState extends State<MyTreeTile> {
                 Expanded(
                   child: Text(
                     widget.entry.node.title,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontFamily: 'RobotoMono',
                       fontSize: 14.0,
                     ),
                   ),
                 ),
               IconButton(
-                icon: Icon(Icons.edit),
+                icon: const Icon(Icons.edit),
                 onPressed: () {
                   setState(() {
                     _isRenaming = true;
@@ -300,11 +215,11 @@ class _MyTreeTileState extends State<MyTreeTile> {
                 },
               ),
               IconButton(
-                icon: Icon(Icons.delete),
+                icon: const Icon(Icons.delete),
                 onPressed: widget.onDelete,
               ),
               IconButton(
-                icon: Icon(Icons.add),
+                icon: const Icon(Icons.add),
                 onPressed: widget.onAddChild,
               ),
             ],
