@@ -8,7 +8,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'MOBILE-EDITOR',
       theme: ThemeData.dark(),
-      home: ProjectList(), 
+      home: const ProjectListScreen(),  
     );
   }
 }

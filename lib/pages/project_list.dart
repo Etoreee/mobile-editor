@@ -2,41 +2,46 @@ import 'package:flutter/material.dart';
 import 'package:flutter_fancy_tree_view/flutter_fancy_tree_view.dart';
 import 'project.dart';
 
-class ProjectList extends StatefulWidget {
+class ProjectListScreen extends StatefulWidget {
+  const ProjectListScreen({super.key});
+
   @override
-  _ProjectListState createState() => _ProjectListState();
+  // ignore: library_private_types_in_public_api
+  _ProjectListScreenState createState() => _ProjectListScreenState();
 }
 
-class _ProjectListState extends State<ProjectList> {
+class _ProjectListScreenState extends State<ProjectListScreen> {
   List<String> projects = [];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Список проектів'),
+        title: const Text('Список проектів'),
       ),
-      body: ListView.builder(
-        itemCount: projects.length,
-        itemBuilder: (context, index) {
+      body: ListView(
+        children: projects.map((project) {
           return ListTile(
-            title: Text(projects[index]),
+            title: Text(project),
             onTap: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => ProjectPage(
-                    projectName: projects[index],
+                  builder: (context) => ProjectScreen(
+                    projectName: project,
                     treeController: TreeController(
                       roots: [],
                       childrenProvider: (FileNode node) => node.children,
                     ),
+                    onBackPressed: () {
+                      Navigator.pop(context);
+                    },
                   ),
                 ),
               );
             },
           );
-        },
+        }).toList(),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
@@ -45,7 +50,7 @@ class _ProjectListState extends State<ProjectList> {
             builder: (context) {
               String newProjectName = '';
               return AlertDialog(
-                title: Text('Створити новий проект'),
+                title: const Text('Створити новий проект'),
                 content: TextField(
                   onChanged: (value) {
                     newProjectName = value;
@@ -56,7 +61,7 @@ class _ProjectListState extends State<ProjectList> {
                     onPressed: () {
                       Navigator.pop(context);
                     },
-                    child: Text('Скасувати'),
+                    child: const Text('Скасувати'),
                   ),
                   TextButton(
                     onPressed: () {
@@ -67,24 +72,27 @@ class _ProjectListState extends State<ProjectList> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => ProjectPage(
+                          builder: (context) => ProjectScreen(
                             projectName: newProjectName,
                             treeController: TreeController(
                               roots: [],
                               childrenProvider: (FileNode node) => node.children,
                             ),
+                            onBackPressed: () {
+                              Navigator.pop(context);
+                            },
                           ),
                         ),
                       );
                     },
-                    child: Text('Створити'),
+                    child: const Text('Створити'),
                   ),
                 ],
               );
             },
           );
         },
-        child: Icon(Icons.add),
+        child: const Icon(Icons.add),
       ),
     );
   }
