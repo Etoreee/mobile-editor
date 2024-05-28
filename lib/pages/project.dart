@@ -282,7 +282,7 @@ class _ProjectScreenState extends State<ProjectScreen> {
   }
 
   void toggleExpanded(TreeEntry<FileNode> entry) {
-    widget.treeController.toggleExpansion(entry as FileNode);
+    widget.treeController.toggleExpansion(entry.node);
   }
 
   void deleteNode(FileNode node) {
