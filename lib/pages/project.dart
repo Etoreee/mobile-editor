@@ -81,7 +81,7 @@ class _ProjectScreenState extends State<ProjectScreen> {
                           setState(
                             () {
                               _selectedFile = node;
-                              _fileContentController.text = node.title;
+                              _fileContentController.text = node.content;
                             },
                           );
                         },
@@ -110,7 +110,7 @@ class _ProjectScreenState extends State<ProjectScreen> {
                 enabled: _selectedFile != null,
                 onChanged: (value) {
                   if (_selectedFile != null) {
-                    _selectedFile!.title = value;
+                    _selectedFile!.content = value;
                   }
                 },
               ),
@@ -344,6 +344,7 @@ class _ProjectScreenState extends State<ProjectScreen> {
 class FileNode {
   final String key;
   String title;
+  String content;
   final bool isDirectory;
   final List<FileNode> children;
 
@@ -352,6 +353,7 @@ class FileNode {
     this.title = '',
     required this.isDirectory,
     this.children = const <FileNode>[],
+    this.content = '',
   });
 
   FileNode copyWith(
