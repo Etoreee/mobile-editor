@@ -5,13 +5,11 @@ import 'package:flutter_fancy_tree_view/flutter_fancy_tree_view.dart';
 
 class ProjectScreen extends StatefulWidget {
   final String projectName;
-  final TreeController<FileNode> treeController;
   final VoidCallback onBackPressed;
 
   const ProjectScreen({
     super.key,
     required this.projectName,
-    required this.treeController,
     required this.onBackPressed,
   });
 
@@ -22,12 +20,15 @@ class ProjectScreen extends StatefulWidget {
 
 class _ProjectScreenState extends State<ProjectScreen> {
   late TextEditingController _fileContentController;
+  late TreeController<FileNode> treeController;
   FileNode? _selectedFile;
 
   @override
   void initState() {
     super.initState();
     _fileContentController = TextEditingController();
+    treeController = TreeController(
+        roots: [], childrenProvider: (FileNode node) => node.children);
   }
 
   @override
@@ -65,7 +66,7 @@ class _ProjectScreenState extends State<ProjectScreen> {
                 ),
                 Expanded(
                   child: TreeView(
-                    treeController: widget.treeController,
+                    treeController: treeController,
                     nodeBuilder: (context, entry) {
                       return MyTreeTile(
                         entry: entry,
@@ -257,32 +258,32 @@ class _ProjectScreenState extends State<ProjectScreen> {
       isDirectory: isDirectory,
     );
     if (parentNode == null) {
-      widget.treeController.roots = [...widget.treeController.roots, newNode];
+      treeController.roots = [...treeController.roots, newNode];
     } else {
       addNode(parentNode, newNode);
     }
-    widget.treeController.rebuild();
+    treeController.rebuild();
   }
 
   void addNode(FileNode parent, FileNode newNode) {
     parent.children.add(newNode);
-    widget.treeController.rebuild();
+    treeController.rebuild();
   }
 
   void renameNode(FileNode node, String newTitle) {
-    List<FileNode> rootsList = List.from(widget.treeController.roots);
+    List<FileNode> rootsList = List.from(treeController.roots);
     for (int i = 0; i < rootsList.length; i++) {
       if (rootsList[i].key == node.key) {
         rootsList[i] = node.copyWith(title: newTitle);
-        widget.treeController.roots = rootsList;
-        widget.treeController.rebuild();
+        treeController.roots = rootsList;
+        treeController.rebuild();
         return;
       }
     }
   }
 
   void toggleExpanded(TreeEntry<FileNode> entry) {
-    widget.treeController.toggleExpansion(entry.node);
+    treeController.toggleExpansion(entry.node);
   }
 
   void deleteNode(FileNode node) {
@@ -313,18 +314,24 @@ class _ProjectScreenState extends State<ProjectScreen> {
   }
 
   void _deleteNode(FileNode node) {
-    List<FileNode> rootsList = List.from(widget.treeController.roots);
+    List<FileNode> rootsList = List.from(treeController.roots);
     for (int i = 0; i < rootsList.length; i++) {
+      if (rootsList[i].key == node.key) {
+        rootsList.removeAt(i);
+        treeController.roots = rootsList;
+        treeController.rebuild();
+        return;
+      }
       removeNodeRecursive(rootsList[i], node);
     }
-    widget.treeController.roots = rootsList;
-    widget.treeController.rebuild();
+    treeController.roots = rootsList;
+    treeController.rebuild();
   }
 
   void removeNodeRecursive(FileNode node, FileNode targetNode) {
     if (node.children.contains(targetNode)) {
       node.children.remove(targetNode);
-      widget.treeController.rebuild();
+      treeController.rebuild();
       return;
     }
 

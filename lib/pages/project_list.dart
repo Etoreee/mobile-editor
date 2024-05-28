@@ -29,10 +29,6 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
                 MaterialPageRoute(
                   builder: (context) => ProjectScreen(
                     projectName: project,
-                    treeController: TreeController(
-                      roots: [],
-                      childrenProvider: (FileNode node) => node.children,
-                    ),
                     onBackPressed: () {
                       Navigator.pop(context);
                     },
@@ -74,11 +70,6 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
                         MaterialPageRoute(
                           builder: (context) => ProjectScreen(
                             projectName: newProjectName,
-                            treeController: TreeController(
-                              roots: [],
-                              childrenProvider: (FileNode node) =>
-                                  node.children,
-                            ),
                             onBackPressed: () {
                               Navigator.pop(context);
                             },
