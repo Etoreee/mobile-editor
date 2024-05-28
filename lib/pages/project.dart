@@ -316,12 +316,6 @@ class _ProjectScreenState extends State<ProjectScreen> {
   void _deleteNode(FileNode node) {
     List<FileNode> rootsList = List.from(treeController.roots);
     for (int i = 0; i < rootsList.length; i++) {
-      if (rootsList[i].key == node.key) {
-        rootsList.removeAt(i);
-        treeController.roots = rootsList;
-        treeController.rebuild();
-        return;
-      }
       removeNodeRecursive(rootsList[i], node);
     }
     treeController.roots = rootsList;
