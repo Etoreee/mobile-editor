@@ -76,7 +76,8 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
                             projectName: newProjectName,
                             treeController: TreeController(
                               roots: [],
-                              childrenProvider: (FileNode node) => node.children,
+                              childrenProvider: (FileNode node) =>
+                                  node.children,
                             ),
                             onBackPressed: () {
                               Navigator.pop(context);
