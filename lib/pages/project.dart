@@ -1,5 +1,7 @@
 // ignore_for_file: prefer_typing_uninitialized_variables
 
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_fancy_tree_view/flutter_fancy_tree_view.dart';
 
@@ -73,7 +75,7 @@ class _ProjectScreenState extends State<ProjectScreen> {
                         onTap: () => toggleExpanded(entry),
                         onRename: (newTitle) =>
                             renameNode(entry.node, newTitle),
-                        onDelete: () => deleteNode(entry.node),
+                        onDelete: () => deleteNode(entry),
                         onAddChild: () =>
                             showCreateNodeDialogInTree(entry.node),
                         isFile: !entry.node.isDirectory,
@@ -286,13 +288,15 @@ class _ProjectScreenState extends State<ProjectScreen> {
     treeController.toggleExpansion(entry.node);
   }
 
-  void deleteNode(FileNode node) {
+  void deleteNode(TreeEntry<FileNode> entry) {
+    log("deleting node ${entry.node.title}");
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
           title: const Text('Видалити вузол'),
-          content: Text('Ви впевнені, що хочете видалити "${node.title}"?'),
+          content:
+              Text('Ви впевнені, що хочете видалити "${entry.node.title}"?'),
           actions: [
             TextButton(
               onPressed: () {
@@ -302,7 +306,7 @@ class _ProjectScreenState extends State<ProjectScreen> {
             ),
             TextButton(
               onPressed: () {
-                _deleteNode(node);
+                _deleteNode(entry);
                 Navigator.pop(context);
               },
               child: const Text('Видалити'),
@@ -313,25 +317,18 @@ class _ProjectScreenState extends State<ProjectScreen> {
     );
   }
 
-  void _deleteNode(FileNode node) {
-    List<FileNode> rootsList = List.from(treeController.roots);
-    for (int i = 0; i < rootsList.length; i++) {
-      removeNodeRecursive(rootsList[i], node);
+  void _deleteNode(TreeEntry<FileNode> entry) {
+    final parent = entry.parent;
+
+    if (parent == null) {
+      final roots = treeController.roots.toList();
+      roots.remove(entry.node);
+      treeController.roots = roots;
+    } else {
+      parent.node.children.remove(entry.node);
     }
-    treeController.roots = rootsList;
+
     treeController.rebuild();
-  }
-
-  void removeNodeRecursive(FileNode node, FileNode targetNode) {
-    if (node.children.contains(targetNode)) {
-      node.children.remove(targetNode);
-      treeController.rebuild();
-      return;
-    }
-
-    for (final child in node.children) {
-      removeNodeRecursive(child, targetNode);
-    }
   }
 }
 
