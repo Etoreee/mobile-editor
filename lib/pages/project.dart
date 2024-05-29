@@ -14,8 +14,7 @@ class ProjectScreen extends StatefulWidget {
   });
 
   @override
-  // ignore: library_private_types_in_public_api
-  _ProjectScreenState createState() => _ProjectScreenState();
+  State<ProjectScreen> createState() => _ProjectScreenState();
 }
 
 class _ProjectScreenState extends State<ProjectScreen> {
