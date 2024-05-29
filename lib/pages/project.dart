@@ -1,5 +1,3 @@
-// ignore_for_file: prefer_typing_uninitialized_variables
-
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
@@ -36,89 +34,83 @@ class _ProjectScreenState extends State<ProjectScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: widget.onBackPressed,
-        ),
-        title: Text(widget.projectName),
-      ),
-      body: Row(
-        children: [
-          Drawer(
-            child: Column(
-              children: [
-                UserAccountsDrawerHeader(
-                  decoration: const BoxDecoration(
-                    color: Color.fromARGB(255, 37, 35, 42),
-                  ),
-                  accountName: Text(
-                    widget.projectName,
-                    style: const TextStyle(
-                      color: Colors.white,
-                    ),
-                  ),
-                  currentAccountPicture: const CircleAvatar(
-                    child: Icon(
-                      Icons.folder,
-                      color: Colors.white,
-                    ),
-                  ),
-                  accountEmail: null,
+      drawer: Drawer(
+        child: Column(
+          children: [
+            UserAccountsDrawerHeader(
+              decoration: const BoxDecoration(
+                color: Color.fromARGB(255, 37, 35, 42),
+              ),
+              accountName: Text(
+                widget.projectName,
+                style: const TextStyle(
+                  color: Colors.white,
                 ),
-                Expanded(
-                  child: TreeView(
-                    treeController: treeController,
-                    nodeBuilder: (context, entry) {
-                      return MyTreeTile(
-                        entry: entry,
-                        onTap: () => toggleExpanded(entry),
-                        onRename: (newTitle) =>
-                            renameNode(entry.node, newTitle),
-                        onDelete: () => deleteNode(entry),
-                        onAddChild: () =>
-                            showCreateNodeDialogInTree(entry.node),
-                        isFile: !entry.node.isDirectory,
-                        onFileSelected: (node) {
-                          setState(
-                            () {
-                              _selectedFile = node;
-                              _fileContentController.text = node.content;
-                            },
-                          );
+              ),
+              currentAccountPicture: const CircleAvatar(
+                child: Icon(
+                  Icons.folder,
+                  color: Colors.white,
+                ),
+              ),
+              accountEmail: null,
+            ),
+            Expanded(
+              child: TreeView(
+                treeController: treeController,
+                nodeBuilder: (context, entry) {
+                  return MyTreeTile(
+                    entry: entry,
+                    onTap: () => toggleExpanded(entry),
+                    onRename: (newTitle) => renameNode(entry.node, newTitle),
+                    onDelete: () => deleteNode(entry),
+                    onAddChild: () => showCreateNodeDialogInTree(entry.node),
+                    isFile: !entry.node.isDirectory,
+                    onFileSelected: (node) {
+                      setState(
+                        () {
+                          _selectedFile = node;
+                          _fileContentController.text = node.content;
+                          Scaffold.of(context).closeDrawer();
                         },
                       );
                     },
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: TextField(
-                controller: _fileContentController,
-                maxLines: null,
-                expands: true,
-                style: const TextStyle(
-                  fontFamily: 'RobotoMono',
-                  fontSize: 16.0,
-                ),
-                decoration: InputDecoration(
-                  border: const OutlineInputBorder(),
-                  hintText: _selectedFile == null ? 'Виберіть файл' : null,
-                ),
-                enabled: _selectedFile != null,
-                onChanged: (value) {
-                  if (_selectedFile != null) {
-                    _selectedFile!.content = value;
-                  }
+                  );
                 },
               ),
             ),
+          ],
+        ),
+      ),
+      appBar: AppBar(
+        leading: Builder(builder: (context) {
+          return IconButton(
+              icon: const Icon(Icons.menu),
+              onPressed: () => Scaffold.of(context).openDrawer());
+        }),
+        title: Text(widget.projectName),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: TextField(
+          controller: _fileContentController,
+          maxLines: null,
+          expands: true,
+          style: const TextStyle(
+            fontFamily: 'RobotoMono',
+            fontSize: 16.0,
           ),
-        ],
+          decoration: InputDecoration(
+            border: const OutlineInputBorder(),
+            hintText: _selectedFile == null ? 'Виберіть файл' : null,
+          ),
+          enabled: _selectedFile != null,
+          onChanged: (value) {
+            if (_selectedFile != null) {
+              _selectedFile!.content = value;
+            }
+          },
+        ),
       ),
       floatingActionButton: Row(
         mainAxisAlignment: MainAxisAlignment.end,

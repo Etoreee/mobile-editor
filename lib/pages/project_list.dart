@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_fancy_tree_view/flutter_fancy_tree_view.dart';
 import 'project.dart';
 
 class ProjectListScreen extends StatefulWidget {
