@@ -1,32 +1,34 @@
 // ignore_for_file: prefer_typing_uninitialized_variables
 
+import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_fancy_tree_view/flutter_fancy_tree_view.dart';
 
 class ProjectScreen extends StatefulWidget {
   final String projectName;
-  final TreeController<FileNode> treeController;
   final VoidCallback onBackPressed;
 
-  const ProjectScreen({super.key, 
+  const ProjectScreen({
+    super.key,
     required this.projectName,
-    required this.treeController,
     required this.onBackPressed,
   });
 
   @override
-  // ignore: library_private_types_in_public_api
   _ProjectScreenState createState() => _ProjectScreenState();
 }
 
 class _ProjectScreenState extends State<ProjectScreen> {
   late TextEditingController _fileContentController;
+  late TreeController<FileNode> treeController;
   FileNode? _selectedFile;
 
   @override
   void initState() {
     super.initState();
     _fileContentController = TextEditingController();
+    treeController = TreeController(
+        roots: [], childrenProvider: (FileNode node) => node.children);
   }
 
   @override
@@ -46,39 +48,47 @@ class _ProjectScreenState extends State<ProjectScreen> {
               children: [
                 UserAccountsDrawerHeader(
                   decoration: const BoxDecoration(
-                  color: Color.fromARGB(255, 37, 35, 42),   
-                ),
-                  accountName: Text(
-                  widget.projectName,
-                  style: const TextStyle(
-                  color: Colors.white, 
-                ),
+                    color: Color.fromARGB(255, 37, 35, 42),
                   ),
-                currentAccountPicture: const CircleAvatar(
-                child: Icon(
-                  Icons.folder,
-                  color: Colors.white, 
+                  accountName: Text(
+                    widget.projectName,
+                    style: const TextStyle(
+                      color: Colors.white,
+                    ),
+                  ),
+                  currentAccountPicture: const CircleAvatar(
+                    child: Icon(
+                      Icons.folder,
+                      color: Colors.white,
+                    ),
+                  ),
+                  accountEmail: null,
                 ),
-              ),
-                accountEmail: null,
-              ),
                 Expanded(
                   child: TreeView(
-                    treeController: widget.treeController,
+                    treeController: treeController,
                     nodeBuilder: (context, entry) {
                       return MyTreeTile(
                         entry: entry,
                         onTap: () => toggleExpanded(entry),
-                        onRename: (newTitle) => renameNode(entry.node, newTitle),
-                        onDelete: () => deleteNode(entry.node),
-                        onAddChild: () => showCreateNodeDialogInTree(entry.node),
+                        onRename: (newTitle) =>
+                            renameNode(entry.node, newTitle),
+                        onDelete: () => deleteNode(entry),
+                        onAddChild: () =>
+                            showCreateNodeDialog(entry.node, isDirectory: true),
                         isFile: !entry.node.isDirectory,
                         onFileSelected: (node) {
-                          setState(() {
-                            _selectedFile = node;
-                            _fileContentController.text = node.title;
-                          },);
+                          setState(
+                            () {
+                              _selectedFile = node;
+                              _fileContentController.text = node.content;
+                            },
+                          );
                         },
+                        onAddFile: () =>
+                            showCreateNodeDialog(entry.node, isDirectory: false),
+                        onAddFolder: () =>
+                            showCreateNodeDialog(entry.node, isDirectory: true),
                       );
                     },
                   ),
@@ -104,7 +114,7 @@ class _ProjectScreenState extends State<ProjectScreen> {
                 enabled: _selectedFile != null,
                 onChanged: (value) {
                   if (_selectedFile != null) {
-                    _selectedFile!.title = value;
+                    _selectedFile!.content = value;
                   }
                 },
               ),
@@ -139,245 +149,156 @@ class _ProjectScreenState extends State<ProjectScreen> {
     showCreateNodeDialog(null, isDirectory: true);
   }
 
-void showCreateNodeDialog(FileNode? parentNode, {bool isDirectory = false}) {
-  String defaultTitle = isDirectory ? 'Нова папка' : 'Новий файл';
-  showDialog(
-    context: context,
-    builder: (context) {
-      String newNodeTitle = '';
-      return AlertDialog(
-        title: Text(isDirectory ? 'Створити нову папку' : 'Створити новий файл'),
-        content: TextField(
-          onChanged: (value) {
-            newNodeTitle = value;
-          },
-          decoration: InputDecoration(
-            hintText: defaultTitle,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
+  void showCreateNodeDialog(FileNode? parentNode, {bool isDirectory = false}) {
+    String defaultTitle = isDirectory ? 'Нова папка' : 'Новий файл';
+    showDialog(
+      context: context,
+      builder: (context) {
+        String newNodeTitle = '';
+        return AlertDialog(
+          title:
+              Text(isDirectory ? 'Створити нову папку' : 'Створити новий файл'),
+          content: TextField(
+            onChanged: (value) {
+              newNodeTitle = value;
             },
-            child: const Text('Скасувати'),
-          ),
-          TextButton(
-            onPressed: () {
-              createNode(parentNode, newNodeTitle, isDirectory);
-              Navigator.pop(context);
-            },
-            child: const Text('Створити'),
-          ),
-        ],
-      );
-    },
-  );
-}
-
-void showCreateNodeDialogInTree(FileNode parentNode) {
-  showDialog(
-    context: context,
-    builder: (context) {
-      String newNodeTitle = '';
-      bool isNewDirectory = false;
-      return AlertDialog(
-        title: Text('Створити новий вузол у "${parentNode.title}"'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              onChanged: (value) {
-                newNodeTitle = value;
-              },
-              decoration: const InputDecoration(
-                hintText: 'Назва вузла',
-              ),
+            decoration: InputDecoration(
+              hintText: defaultTitle,
             ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text('Тип вузла:'),
-                RadioListTile<bool>(
-                  value: false,
-                  groupValue: !isNewDirectory,
-                  onChanged: (value) {
-                    setState(() {
-                      isNewDirectory = value == false;
-                    });
-                  },
-                  activeColor: Theme.of(context).primaryColor,
-                  title: const Text('Файл'),
-                ),
-                RadioListTile<bool>(
-                  value: true,
-                  groupValue: isNewDirectory,
-                  onChanged: (value) {
-                    setState(() {
-                      isNewDirectory = value == true;
-                    });
-                  },
-                  activeColor: Theme.of(context).primaryColor,
-                  title: const Text('Папка'),
-                ),
-              ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('Скасувати'),
+            ),
+            TextButton(
+              onPressed: () {
+                createNode(parentNode, newNodeTitle, isDirectory);
+                Navigator.pop(context);
+              },
+              child: const Text('Створити'),
             ),
           ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-            },
-            child: const Text('Скасувати'),
-          ),
-          TextButton(
-            onPressed: () {
-              createNode(parentNode, newNodeTitle, isNewDirectory);
-              Navigator.pop(context);
-            },
-            child: const Text('Створити'),
-          ),
-        ],
-      );
-    },
-  );
-}
+        );
+      },
+    );
+  }
 
-void createNode(FileNode? parentNode, String title, bool isDirectory) {
+  void createNode(FileNode? parentNode, String title, bool isDirectory) {
   FileNode newNode = FileNode(
     key: DateTime.now().millisecondsSinceEpoch.toString(),
     title: title,
     isDirectory: isDirectory,
   );
   if (parentNode == null) {
-    widget.treeController.roots = [...widget.treeController.roots, newNode];
+    treeController.roots = [...treeController.roots, newNode];
   } else {
-    addNode(parentNode, newNode);
+    parentNode.children = [...parentNode.children, newNode];
   }
-  widget.treeController.rebuild();
+  treeController.rebuild(); 
+
+  
+  print('Створено новий елемент: $newNode');
 }
 
-void addNode(FileNode parent, FileNode newNode) {
-  parent.children.add(newNode);
-  widget.treeController.rebuild();
-}
+
   void renameNode(FileNode node, String newTitle) {
-    List<FileNode> rootsList = List.from(widget.treeController.roots);
-    for (int i = 0; i < rootsList.length; i++) {
-      if (rootsList[i].key == node.key) {
-        rootsList[i] = node.copyWith(title: newTitle);
-        widget.treeController.roots = rootsList;
-        widget.treeController.rebuild();
-        return;
-      }
-    }
+    node.title = newTitle;
+    treeController.rebuild();
   }
 
   void toggleExpanded(TreeEntry<FileNode> entry) {
-    widget.treeController.toggleExpansion(entry as FileNode);
+    treeController.toggleExpansion(entry.node);
   }
 
-  void deleteNode(FileNode node) {
-  showDialog(
-    context: context,
-    builder: (context) {
-      return AlertDialog(
-        title: const Text('Видалити вузол'),
-        content: Text('Ви впевнені, що хочете видалити "${node.title}"?'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-            },
-            child: const Text('Скасувати'),
-          ),
-          TextButton(
-            onPressed: () {
-              _deleteNode(node);
-              Navigator.pop(context);
-            },
-            child: const Text('Видалити'),
-          ),
-        ],
-      );
-    },
-  );
+  void deleteNode(TreeEntry<FileNode> entry) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Видалити вузол'),
+          content:
+              Text('Ви впевнені, що хочете видалити "${entry.node.title}"?'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('Скасувати'),
+            ),
+            TextButton(
+              onPressed: () {
+                _deleteNode(entry);
+                Navigator.pop(context);
+              },
+              child: const Text('Видалити'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _deleteNode(TreeEntry<FileNode> entry) {
+    final parent = entry.parent;
+
+    if (parent == null) {
+      final roots = treeController.roots.toList();
+      roots.remove(entry.node);
+      treeController.roots = roots;
+    } else {
+      parent.node.children.remove(entry.node);
+    }
+
+    treeController.rebuild();
+  }
 }
 
-void _deleteNode(FileNode node) {
-  List<FileNode> rootsList = List.from(widget.treeController.roots);
-  for (int i = 0; i < rootsList.length; i++) {
-    removeNodeRecursive(rootsList[i], node);
-  }
-  widget.treeController.roots = rootsList;
-  widget.treeController.rebuild();
-}
-
-  void removeNodeRecursive(FileNode node, FileNode targetNode) {
-  if (node.children.contains(targetNode)) {
-    node.children.remove(targetNode);
-    widget.treeController.rebuild();
-    return;
-  }
-
-  for (final child in node.children) {
-    removeNodeRecursive(child, targetNode);
-  }
- }
-}
 class FileNode {
   final String key;
   String title;
+  String content;
   final bool isDirectory;
-  final List<FileNode> children;
+  List<FileNode> children;
 
   FileNode({
     required this.key,
     this.title = '',
     required this.isDirectory,
     this.children = const <FileNode>[],
+    this.content = '',
   });
-
-  FileNode copyWith({String? title, bool? isDirectory, List<FileNode>? children}) {
-    return FileNode(
-      key: key,
-      title: title ?? this.title,
-      isDirectory: isDirectory ?? this.isDirectory,
-      children: children ?? this.children,
-    );
-  }
 }
 
 class MyTreeTile extends StatefulWidget {
   const MyTreeTile({
-    super.key,
+    Key? key,
     required this.entry,
     required this.onTap,
     required this.onRename,
     required this.onDelete,
-    required this.onAddChild, 
+    required this.onAddChild,
     required this.isFile,
     required this.onFileSelected,
-  });
+    required this.onAddFile,
+    required this.onAddFolder,
+  }) : super(key: key);
 
   final TreeEntry<FileNode> entry;
   final VoidCallback onTap;
   final ValueChanged<String> onRename;
   final VoidCallback onDelete;
-  final VoidCallback onAddChild; 
+  final VoidCallback onAddChild;
   final bool isFile;
   final ValueChanged<FileNode> onFileSelected;
+  final VoidCallback onAddFile;
+  final VoidCallback onAddFolder;
 
   @override
   State<MyTreeTile> createState() => _MyTreeTileState();
 }
-
-
-
-void createNode(FileNode? parentNode, String newNodeTitle, bool isDirectory) {
-}
-
 
 class _MyTreeTileState extends State<MyTreeTile> {
   bool _isRenaming = false;
@@ -440,9 +361,25 @@ class _MyTreeTileState extends State<MyTreeTile> {
                 icon: const Icon(Icons.delete),
                 onPressed: widget.onDelete,
               ),
-              IconButton(
-                icon: const Icon(Icons.add),
-                onPressed: widget.onAddChild, 
+              PopupMenuButton<String>(
+                onSelected: (value) {
+                  if (value == 'add_file') {
+                    widget.onAddFile();
+                  } else if (value == 'add_folder') {
+                    widget.onAddFolder();
+                  }
+                },
+                itemBuilder: (BuildContext context) => [
+                  const PopupMenuItem<String>(
+                    value: 'add_file',
+                    child: Text('Додати файл'),
+                  ),
+                  const PopupMenuItem<String>(
+                    value: 'add_folder',
+                    child: Text('Додати папку'),
+                  ),
+                ],
+                icon: const Icon(Icons.more_vert),
               ),
             ],
           ),
